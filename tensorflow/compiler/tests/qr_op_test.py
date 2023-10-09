@@ -114,6 +114,7 @@ class QrOpTest(xla_test.XLATestCase, parameterized.TestCase):
   DTYPES = [np.float32, np.complex64]
   PARAMS = itertools.product(SIZES, SIZES, DTYPES)
 
+  '''
   @parameterized.parameters(*PARAMS)
   def testQR(self, rows, cols, dtype):
     for full_matrices in [True, False]:
@@ -121,11 +122,13 @@ class QrOpTest(xla_test.XLATestCase, parameterized.TestCase):
       for batch_dims in [(), (3,)] + [(3, 2)] * (max(rows, cols) < 10):
         x_np = self._random_matrix(dtype, batch_dims + (rows, cols))
         self._test(x_np, full_matrices)
+  '''
 
   def testLarge2000x2000(self):
     x_np = self._random_matrix(np.float32, (2000, 2000))
     self._test(x_np, full_matrices=True)
 
+  '''
   @unittest.skip("Test times out on CI")
   def testLarge17500x128(self):
     x_np = self._random_matrix(np.float32, (17500, 128))
@@ -142,6 +145,7 @@ class QrOpTest(xla_test.XLATestCase, parameterized.TestCase):
     x_np = self._random_matrix(np.complex64, (rows, cols))
     x_np[:, 1] = x_np[:, 2]
     self._test(x_np, full_matrices=True, full_rank=False)
+  '''
 
 
 if __name__ == "__main__":

@@ -5238,8 +5238,15 @@ def tensordot(a, b, axes, name=None):
     a_reshape, a_free_dims, a_free_dims_static = _tensordot_reshape(a, a_axes)
     b_reshape, b_free_dims, b_free_dims_static = _tensordot_reshape(
         b, b_axes, True)
+    print('a_reshape.shape=', a_reshape.shape)  
+    print('a_free_dims=', a_free_dims)
+    print('a_free_dims_static=', a_free_dims_static)
+    print('b_reshape.shape=', b_reshape.shape)  
+    print('b_free_dims=', b_free_dims)
+    print('b_free_dims_static=', b_free_dims_static)
     ab_matmul = matmul(a_reshape, b_reshape)
     if isinstance(a_free_dims, list) and isinstance(b_free_dims, list):
+      print('If path')
       if (ab_matmul.get_shape().is_fully_defined() and
           ab_matmul.get_shape().as_list() == a_free_dims + b_free_dims):
         return ab_matmul
@@ -5247,6 +5254,7 @@ def tensordot(a, b, axes, name=None):
         return array_ops.reshape(
             ab_matmul, a_free_dims + b_free_dims, name=name)
     else:
+      print('Else path')
       a_free_dims = ops.convert_to_tensor(a_free_dims, dtype=dtypes.int32)
       b_free_dims = ops.convert_to_tensor(b_free_dims, dtype=dtypes.int32)
       product = array_ops.reshape(

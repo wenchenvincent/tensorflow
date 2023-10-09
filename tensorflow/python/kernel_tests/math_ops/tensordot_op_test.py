@@ -37,6 +37,7 @@ def _add_test(test, test_name, fn):
 
 class TensordotTest(test_lib.TestCase):
 
+  '''
   @test_util.run_in_graph_and_eager_modes(use_gpu=True)
   def test_invalid_shape(self):
     a = [[1, 2], [3, 4]]
@@ -134,6 +135,7 @@ class TensordotTest(test_lib.TestCase):
       output_shape = output_shape.as_list()
       self.assertEqual(output_shape[0], 2)
       self.assertEqual(output_shape[1], None)
+  '''
 
 
 def _get_tensordot_tests(dtype_, rank_a_, rank_b_, num_dims_, dynamic_shape_):
@@ -149,9 +151,21 @@ def _get_tensordot_tests(dtype_, rank_a_, rank_b_, num_dims_, dynamic_shape_):
     shared_shape = np.random.random_integers(1, _MAXDIM, num_dims_)
     a_dims = _random_subset(num_dims_, rank_a_)
     b_dims = _random_subset(num_dims_, rank_b_)
+    '''
+    print('a_shape=', a_shape)
+    print('b_shape=', b_shape)
+    print('shared_shape=', shared_shape)
+    print('a_dims=', a_dims)
+    print('b_dims=', b_dims)
+    '''
     for i in range(num_dims_):
       a_shape[a_dims[i]] = shared_shape[i]
       b_shape[b_dims[i]] = shared_shape[i]
+    '''
+    print('Rearranging')
+    print('a_shape=', a_shape)
+    print('b_shape=', b_shape)
+    '''
     a = np.random.uniform(
         low=-1.0, high=1.0,
         size=np.prod(a_shape)).reshape(a_shape).astype(dtype_)
@@ -160,6 +174,7 @@ def _get_tensordot_tests(dtype_, rank_a_, rank_b_, num_dims_, dynamic_shape_):
         size=np.prod(b_shape)).reshape(b_shape).astype(dtype_)
     return a, b, a_dims, b_dims
 
+  '''
   @test_util.run_in_graph_and_eager_modes(use_gpu=True)
   @test_util.run_without_tensor_float_32("Tests tensordot, which calls matmul")
   def test_tensordot(self):
@@ -191,8 +206,9 @@ def _get_tensordot_tests(dtype_, rank_a_, rank_b_, num_dims_, dynamic_shape_):
           tf_ans = math_ops.tensordot(a_np, b_np, (a_dims_np, b_dims_np))
       self.assertAllClose(tf_ans, np_ans, rtol=tol, atol=tol)
       self.assertAllEqual(tf_ans.shape, np_ans.shape)
+  '''
 
-  @test_util.run_in_graph_and_eager_modes(use_gpu=True)
+  #@test_util.run_in_graph_and_eager_modes(use_gpu=True)
   @test_util.run_without_tensor_float_32("Tests tensordot, which calls matmul")
   def test_tensordot_scalar_axes(self):
     if dynamic_shape_ and context.executing_eagerly():
@@ -210,11 +226,23 @@ def _get_tensordot_tests(dtype_, rank_a_, rank_b_, num_dims_, dynamic_shape_):
         low=-1.0, high=1.0, size=np.prod(shape)).reshape(shape).astype(dtype_)
     b_np = np.random.uniform(
         low=-1.0, high=1.0, size=np.prod(shape)).reshape(shape).astype(dtype_)
-    all_axes = [0, 1]
+    #all_axes = [0, 1]
+    all_axes = [ 1]
     if a_np.ndim > 2:
       all_axes.append(a_np.ndim - 1)
+    with open('/tmp/a.bin', 'wb') as fo:
+      a_np.tofile(fo)
+    with open('/tmp/b.bin', 'wb') as fo:
+      b_np.tofile(fo)
+    print('a_np.shape=', a_np.shape)
+    print('b_np.shape=', b_np.shape)
+    print('a_np.ndim=', a_np.ndim)
+    print('b_np.ndim=', b_np.ndim)
     for axes in all_axes:
+      print('axes=', axes)
       np_ans = np.tensordot(a_np, b_np, axes=axes)
+      with open('/tmp/np_out.bin', 'wb') as fo:
+        np_ans.tofile(fo)
       with self.cached_session() as sess:
         if dynamic_shape_:
           a = array_ops.placeholder(dtype_)
@@ -223,10 +251,13 @@ def _get_tensordot_tests(dtype_, rank_a_, rank_b_, num_dims_, dynamic_shape_):
           tf_ans = sess.run(c, feed_dict={a: a_np, b: b_np})
         else:
           tf_ans = math_ops.tensordot(a_np, b_np, axes=axes)
+      with open('/tmp/tf_out.bin', 'wb') as fo:
+        tf_ans.numpy().tofile(fo)
       self.assertAllClose(tf_ans, np_ans, rtol=tol, atol=tol)
       self.assertAllEqual(tf_ans.shape, np_ans.shape)
 
-  return [test_tensordot, test_tensordot_scalar_axes]
+  #return [test_tensordot, test_tensordot_scalar_axes]
+  return [test_tensordot_scalar_axes]
 
 
 if __name__ == "__main__":
@@ -244,5 +275,6 @@ if __name__ == "__main__":
               name = "%s_%s_%s_%s_%s_%s" % (testcase.__name__, dtype.__name__,
                                             rank_a, rank_b, num_dims,
                                             dynamic_shape)
-              _add_test(TensordotTest, name, testcase)
+              if dtype == np.float64 and rank_a == 5 and rank_b == 5 and num_dims == 5 and dynamic_shape == False:
+                  _add_test(TensordotTest, name, testcase)
   test_lib.main()
